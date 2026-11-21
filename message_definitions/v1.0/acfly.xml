@@ -1,0 +1,1276 @@
+<?xml version="1.0"?>
+<!--
+  ACFly Autopilot MAVLink Dialect
+  Contact: https://github.com/ACFly
+
+  Message ID Ranges:
+    168-191    ArduPilot shared messages (legacy v1 compatible)
+    200-213    ACFly core messages (v1 compatible, no conflict with other dialects)
+    352, 500   ACFly extended messages (legacy)
+    602        ACFly battery status (legacy)
+    54000-54049 ACFly v2 status/sensor messages (v2 only)
+    54050-54099 ACFly v2 mission/navigation messages (v2 only)
+    54100-54149 ACFly v2 gimbal/camera messages (v2 only)
+    54150-54199 ACFly v2 battery/power messages (v2 only)
+    54200-54999 ACFly v2 future reserved
+
+  Command ID Ranges (MAV_CMD):
+    10-12      ACFly core commands (legacy)
+    13-15      ACFly core commands (legacy, reserved for expansion)
+    1002-1013  ACFly gimbal commands (legacy)
+    42000-42999 ArduPilot shared commands
+    43000-43001 ArduPilot guided mode commands
+    55000      ACFly v2 airport (drone dock/nest) commands (v2 only)
+    55001-55099 ACFly v2 flight control commands (v2 only)
+    55100-55199 ACFly v2 gimbal/camera commands (v2 only)
+    55200-55999 ACFly v2 future reserved
+
+  Allocated in accordance with MAVLink community conventions.
+  See all.xml for the full registry of dialect ID ranges.
+  Next available v2 message ID: 54000
+  Next available v2 command ID: 55001
+-->
+
+<mavlink>
+  <include>common.xml</include>
+  <version>1</version>
+  <dialect>5</dialect>
+  <enums>
+    <enum name="MODE_CODE">
+      <description>ACFly flight state code. Values map one-to-one to the mode_code property of the DJI Cloud API (dock-to-cloud MQTT aircraft properties).</description>
+      <entry value="0" name="MODE_CODE_STANDBY">
+        <description>Standby.</description>
+      </entry>
+      <entry value="1" name="MODE_CODE_TAKEOFF_PREPARING">
+        <description>Preparing for takeoff.</description>
+      </entry>
+      <entry value="2" name="MODE_CODE_TAKEOFF_READY">
+        <description>Takeoff preparation complete, ready to take off.</description>
+      </entry>
+      <entry value="3" name="MODE_CODE_MANUAL_FLIGHT">
+        <description>Manual flight.</description>
+      </entry>
+      <entry value="4" name="MODE_CODE_AUTO_TAKEOFF">
+        <description>Automatic takeoff.</description>
+      </entry>
+      <entry value="5" name="MODE_CODE_MISSION_FLIGHT">
+        <description>Wayline (mission) flight.</description>
+      </entry>
+      <entry value="7" name="MODE_CODE_SMART_FOLLOW">
+        <description>Smart follow.</description>
+      </entry>
+      <entry value="9" name="MODE_CODE_AUTO_RTL">
+        <description>Automatic return to home (RTH).</description>
+      </entry>
+      <entry value="10" name="MODE_CODE_AUTO_LAND">
+        <description>Automatic landing.</description>
+      </entry>
+      <entry value="11" name="MODE_CODE_FORCE_LAND">
+        <description>Forced landing.</description>
+      </entry>
+    </enum>
+    <enum name="MODE_CODE_REASON">
+      <description>Reason for the vehicle entering the current flight state. Values below 100 map one-to-one to the mode_code_reason property of the DJI Cloud API. Values 100 and above are ACFly vendor-specific extension reasons.</description>
+      <entry value="0" name="MODE_CODE_REASON_NONE">
+        <description>No specific reason.</description>
+      </entry>
+      <entry value="2" name="MODE_CODE_REASON_LVOLT_RTL">
+        <description>Battery voltage too low (RTH, landing).</description>
+      </entry>
+      <entry value="3" name="MODE_CODE_REASON_LVOLT_LAND">
+        <description>Battery voltage critically low (landing).</description>
+      </entry>
+      <entry value="4" name="MODE_CODE_REASON_RC_BUTTON">
+        <description>Requested by remote controller button (takeoff, RTH, landing).</description>
+      </entry>
+      <entry value="5" name="MODE_CODE_REASON_APP">
+        <description>Requested by app (takeoff, RTH, landing).</description>
+      </entry>
+      <entry value="6" name="MODE_CODE_REASON_RC_LOST">
+        <description>Remote control signal lost (RTH, landing, hover).</description>
+      </entry>
+      <entry value="7" name="MODE_CODE_REASON_EXTERNAL">
+        <description>Triggered by external device (dock, swarm, etc.).</description>
+      </entry>
+      <entry value="11" name="MODE_CODE_REASON_MISSION_TAKEOFF">
+        <description>Requested while executing a waypoint mission (takeoff).</description>
+      </entry>
+      <entry value="12" name="MODE_CODE_REASON_RTL_HOME_LAND">
+        <description>RTH phase reached overhead of the home point, landing requested (landing).</description>
+      </entry>
+      <entry value="17" name="MODE_CODE_REASON_LVOLT_RTL_LAND">
+        <description>Entering landing after smart low-battery RTH (landing).</description>
+      </entry>
+      <entry value="21" name="MODE_CODE_REASON_RTL_CANCELED">
+        <description>RTH cancelled (hover).</description>
+      </entry>
+      <entry value="100" name="MODE_CODE_REASON_ATTITUDE_NOT_READY">
+        <description>Attitude estimation system not yet initialized (standby).</description>
+      </entry>
+      <entry value="101" name="MODE_CODE_REASON_ALTITUDE_NOT_READY">
+        <description>Altitude estimation system not yet initialized (standby).</description>
+      </entry>
+      <entry value="102" name="MODE_CODE_REASON_NO_POSITION">
+        <description>Position estimation not initialized: no positioning or positioning accuracy insufficient (standby, takeoff preparing).</description>
+      </entry>
+      <entry value="103" name="MODE_CODE_REASON_GPS_NOT_FIXED">
+        <description>GNSS positioning not yet at fixed solution (takeoff preparing).</description>
+      </entry>
+      <entry value="104" name="MODE_CODE_REASON_DAO_NOT_FIXED">
+        <description>Direction-finding (DAO) not yet at fixed solution (takeoff preparing).</description>
+      </entry>
+      <entry value="105" name="MODE_CODE_REASON_RC_TAKEOVER">
+        <description>User moved the sticks and took over control, interrupting the automatic task or landing (manual flight).</description>
+      </entry>
+      <entry value="106" name="MODE_CODE_REASON_FENCE">
+        <description>Geofence triggered (RTH, landing, hover).</description>
+      </entry>
+      <entry value="107" name="MODE_CODE_REASON_MISSION_NAV">
+        <description>Automatic RTH or landing waypoint within the wayline mission (RTH, landing).</description>
+      </entry>
+    </enum>
+    <enum name="ACFLY_IMU_FLAGS" bitmask="true">
+      <description>ACFly IMU sensor connectivity and calibration flags.</description>
+      <entry value="1" name="ACFLY_IMU_FLAG_ACCEL0">
+        <description>Accelerometer 0 connected.</description>
+      </entry>
+      <entry value="2" name="ACFLY_IMU_FLAG_ACCEL1">
+        <description>Accelerometer 1 connected.</description>
+      </entry>
+      <entry value="4" name="ACFLY_IMU_FLAG_ACCEL2">
+        <description>Accelerometer 2 connected.</description>
+      </entry>
+      <entry value="16" name="ACFLY_IMU_FLAG_GYRO0">
+        <description>Gyroscope 0 connected.</description>
+      </entry>
+      <entry value="32" name="ACFLY_IMU_FLAG_GYRO1">
+        <description>Gyroscope 1 connected.</description>
+      </entry>
+      <entry value="64" name="ACFLY_IMU_FLAG_GYRO2">
+        <description>Gyroscope 2 connected.</description>
+      </entry>
+      <entry value="256" name="ACFLY_IMU_FLAG_COMPASS0">
+        <description>Compass 0 connected.</description>
+      </entry>
+      <entry value="512" name="ACFLY_IMU_FLAG_COMPASS1">
+        <description>Compass 1 connected.</description>
+      </entry>
+      <entry value="1024" name="ACFLY_IMU_FLAG_COMPASS2">
+        <description>Compass 2 connected.</description>
+      </entry>
+    </enum>
+    <enum name="ACFLY_MISSION_STATUS_FLAG" bitmask="true">
+      <description>ACFly mission navigation status flags.</description>
+      <entry value="1" name="ACFLY_MISSION_STATUS_IN_FLIGHT">
+        <description>Vehicle is currently in mission flight.</description>
+      </entry>
+      <entry value="2" name="ACFLY_MISSION_STATUS_RESUME_WP_EXIST">
+        <description>Resume waypoint exists.</description>
+      </entry>
+    </enum>
+    <enum name="ACFLY_MISSION_REPORT_RESULT">
+      <description>ACFly mission execution states for mission status reporting.</description>
+      <entry value="0" name="ACFLY_MISSION_REPORT_STARTED">
+        <description>Mission execution has started.</description>
+      </entry>
+      <entry value="1" name="ACFLY_MISSION_REPORT_EXECUTING">
+        <description>Mission is currently executing.</description>
+      </entry>
+      <entry value="2" name="ACFLY_MISSION_REPORT_SUCCESS">
+        <description>Mission execution completed successfully.</description>
+      </entry>
+      <entry value="3" name="ACFLY_MISSION_REPORT_FAILURE">
+        <description>Mission execution failed.</description>
+      </entry>
+    </enum>
+    <enum name="ACFLY_REPOSITION_FLAGS">
+      <description>ACFly reposition flags. Value 2 replaces MAV_DO_REPOSITION_FLAGS value 2 conflict.</description>
+      <entry value="1" name="ACFLY_REPOSITION_FLAGS_CHANGE_MODE">
+        <description>Change mode as part of reposition.</description>
+      </entry>
+      <entry value="2" name="ACFLY_REPOSITION_FLAGS_ALTITUDE_MODE">
+        <description>Climb to target altitude first, then navigate horizontally.</description>
+      </entry>
+    </enum>
+    <enum name="ACFLY_POSTYPE_FLAGS">
+      <description>ACFly position sensor type classification.</description>
+      <entry value="0" name="ACFLY_POSTYPE_GLOBAL_POSITIONING">
+        <description>Global positioning sensor (e.g. GPS).</description>
+      </entry>
+      <entry value="1" name="ACFLY_POSTYPE_RELATIVE_POSITIONING">
+        <description>Relative/local positioning sensor (e.g. optical flow, VIO).</description>
+      </entry>
+      <entry value="2" name="ACFLY_POSTYPE_RANGE_POSITIONING">
+        <description>Range-based positioning sensor (e.g. rangefinder, UWB).</description>
+      </entry>
+    </enum>
+    <enum name="ACFLY_POSDATATYPE_FLAGS">
+      <description>ACFly position sensor data type flags.</description>
+      <entry value="0" name="ACFLY_POSDATA_S_XY">
+        <description>Static XY position.</description>
+      </entry>
+      <entry value="1" name="ACFLY_POSDATA_S_Z">
+        <description>Static Z position.</description>
+      </entry>
+      <entry value="2" name="ACFLY_POSDATA_S_XYZ">
+        <description>Static XYZ position.</description>
+      </entry>
+      <entry value="8" name="ACFLY_POSDATA_V_XY">
+        <description>Velocity XY.</description>
+      </entry>
+      <entry value="9" name="ACFLY_POSDATA_V_Z">
+        <description>Velocity Z.</description>
+      </entry>
+      <entry value="10" name="ACFLY_POSDATA_V_XYZ">
+        <description>Velocity XYZ.</description>
+      </entry>
+      <entry value="16" name="ACFLY_POSDATA_SV_XY">
+        <description>Speed + XY position.</description>
+      </entry>
+      <entry value="17" name="ACFLY_POSDATA_SV_Z">
+        <description>Speed + Z position.</description>
+      </entry>
+      <entry value="18" name="ACFLY_POSDATA_SV_XYZ">
+        <description>Speed + XYZ position.</description>
+      </entry>
+    </enum>
+    <enum name="ACFLY_CAMERA_CAP_FLAGS" bitmask="true">
+      <description>ACFly camera capability flags. Bits 12+ are ACFly-specific.</description>
+      <entry value="4096" name="ACFLY_CAMERA_CAP_HAS_LASER">
+        <description>Camera has laser rangefinder.</description>
+      </entry>
+      <entry value="8192" name="ACFLY_CAMERA_CAP_HAS_THERMAL">
+        <description>Camera has thermal imaging.</description>
+      </entry>
+      <entry value="16384" name="ACFLY_CAMERA_CAP_HAS_DOUBLE_VIDEO">
+        <description>Camera supports dual video output.</description>
+      </entry>
+      <entry value="32768" name="ACFLY_CAMERA_CAP_HAS_GIMBAL_PITCH">
+        <description>Gimbal supports pitch control.</description>
+      </entry>
+      <entry value="65536" name="ACFLY_CAMERA_CAP_HAS_GIMBAL_YAW">
+        <description>Gimbal supports yaw control.</description>
+      </entry>
+      <entry value="131072" name="ACFLY_CAMERA_CAP_HAS_GIMBAL_UP">
+        <description>Gimbal supports up command.</description>
+      </entry>
+      <entry value="262144" name="ACFLY_CAMERA_CAP_HAS_GIMBAL_DOWN">
+        <description>Gimbal supports down command.</description>
+      </entry>
+      <entry value="524288" name="ACFLY_CAMERA_CAP_HAS_GIMBAL_CENTER">
+        <description>Gimbal supports center/return-to-center.</description>
+      </entry>
+      <entry value="1048576" name="ACFLY_CAMERA_CAP_HAS_LED">
+        <description>Camera has LED light.</description>
+      </entry>
+      <entry value="2097152" name="ACFLY_CAMERA_CAP_HAS_FLIP">
+        <description>Camera supports image flip.</description>
+      </entry>
+      <entry value="4194304" name="ACFLY_CAMERA_CAP_HAS_SWITCH">
+        <description>Camera supports input switching.</description>
+      </entry>
+      <entry value="8388608" name="ACFLY_CAMERA_CAP_HAS_CALIBRATION">
+        <description>Camera supports calibration.</description>
+      </entry>
+      <entry value="16777216" name="ACFLY_CAMERA_CAP_HAS_ACK">
+        <description>Camera supports command acknowledgment.</description>
+      </entry>
+      <entry value="33554432" name="ACFLY_CAMERA_CAP_SHOW_UI_BUTTON">
+        <description>Camera has UI button display.</description>
+      </entry>
+      <entry value="67108864" name="ACFLY_CAMERA_CAP_GIMBAL_CTRL_SEND_WHEN_CHANGED">
+        <description>Gimbal control data sent on change.</description>
+      </entry>
+      <entry value="134217728" name="ACFLY_CAMERA_CAP_TARGET_DETECTION">
+        <description>Camera supports target detection.</description>
+      </entry>
+      <entry value="268435456" name="ACFLY_CAMERA_CAP_HAS_OSD">
+        <description>Camera has OSD overlay.</description>
+      </entry>
+      <entry value="536870912" name="ACFLY_CAMERA_CAP_SHOW_CAMERA_AREA">
+        <description>Camera can show camera area overlay.</description>
+      </entry>
+      <entry value="1073741824" name="ACFLY_CAMERA_CAP_TARGET_SELECTION_RECTANGLE">
+        <description>Camera supports target selection rectangle.</description>
+      </entry>
+    </enum>
+    <enum name="ACFLY_WATER_QUALITY_SENSOR_TYPE">
+      <description>Type of water quality sensor.</description>
+      <entry value="0" name="ACFLY_WATER_QUALITY_TEMPERATURE">
+        <description>Temperature sensor.</description>
+      </entry>
+      <entry value="1" name="ACFLY_WATER_QUALITY_PH">
+        <description>pH sensor.</description>
+      </entry>
+      <entry value="2" name="ACFLY_WATER_QUALITY_DISSOLVED_OXYGEN">
+        <description>Dissolved oxygen sensor.</description>
+      </entry>
+      <entry value="3" name="ACFLY_WATER_QUALITY_TURBIDITY">
+        <description>Turbidity sensor.</description>
+      </entry>
+      <entry value="4" name="ACFLY_WATER_QUALITY_CONDUCTIVITY">
+        <description>Conductivity sensor.</description>
+      </entry>
+      <entry value="5" name="ACFLY_WATER_QUALITY_COMPOUND">
+        <description>Compound sensor.</description>
+      </entry>
+    </enum>
+    <enum name="THREAD_STATE">
+      <description>Thread scheduling state. Mirrors the FreeRTOS eTaskState values returned by eTaskGetState().</description>
+      <entry value="0" name="THREAD_STATE_RUNNING">
+        <description>A task is querying the state of itself, so it must be running.</description>
+      </entry>
+      <entry value="1" name="THREAD_STATE_READY">
+        <description>The task is in the ready or pending ready list.</description>
+      </entry>
+      <entry value="2" name="THREAD_STATE_BLOCKED">
+        <description>The task is in the Blocked state.</description>
+      </entry>
+      <entry value="3" name="THREAD_STATE_SUSPENDED">
+        <description>The task is in the Suspended state, or is in the Blocked state with an infinite timeout.</description>
+      </entry>
+      <entry value="4" name="THREAD_STATE_DELETED">
+        <description>The task has been deleted, but its TCB has not yet been freed.</description>
+      </entry>
+      <entry value="5" name="THREAD_STATE_INVALID">
+        <description>Invalid state value, used when the task handle is not valid.</description>
+      </entry>
+    </enum>
+    <enum name="FENCE_ACTION">
+      <description>ACFly fence action types.</description>
+      <entry value="0" name="FENCE_ACTION_NONE">
+        <description>Disable fence.</description>
+      </entry>
+      <entry value="1" name="FENCE_ACTION_GUIDED">
+        <description>Fly to geofence return point.</description>
+      </entry>
+      <entry value="2" name="FENCE_ACTION_REPORT">
+        <description>Report fence breach only.</description>
+      </entry>
+      <entry value="3" name="FENCE_ACTION_GUIDED_THR_PASS">
+        <description>Fly to geofence return point with throttle pass-through.</description>
+      </entry>
+      <entry value="4" name="FENCE_ACTION_RTL">
+        <description>Return to launch.</description>
+      </entry>
+      <entry value="5" name="FENCE_ACTION_HOLD">
+        <description>Hold at current position.</description>
+      </entry>
+      <entry value="6" name="FENCE_ACTION_TERMINATE">
+        <description>Terminate flight.</description>
+      </entry>
+      <entry value="7" name="FENCE_ACTION_LAND">
+        <description>Land at current position.</description>
+      </entry>
+    </enum>
+    <enum name="MAV_CMD_ACK">
+      <description>ACFly command acknowledgment result codes.</description>
+      <entry value="0" name="MAV_CMD_ACK_OK">
+        <description>Command accepted and executed.</description>
+      </entry>
+      <entry value="1" name="MAV_CMD_ACK_ERR_FAIL">
+        <description>Command execution failed.</description>
+      </entry>
+      <entry value="2" name="MAV_CMD_ACK_ERR_ACCESS_DENIED">
+        <description>Command access denied.</description>
+      </entry>
+      <entry value="3" name="MAV_CMD_ACK_ERR_NOT_SUPPORTED">
+        <description>Command not supported.</description>
+      </entry>
+      <entry value="4" name="MAV_CMD_ACK_ERR_COORDINATE_FRAME_NOT_SUPPORTED">
+        <description>Coordinate frame not supported.</description>
+      </entry>
+      <entry value="5" name="MAV_CMD_ACK_ERR_COORDINATES_OUT_OF_RANGE">
+        <description>Coordinates out of range.</description>
+      </entry>
+      <entry value="6" name="MAV_CMD_ACK_ERR_X_LAT_OUT_OF_RANGE">
+        <description>X/Latitude out of range.</description>
+      </entry>
+      <entry value="7" name="MAV_CMD_ACK_ERR_Y_LON_OUT_OF_RANGE">
+        <description>Y/Longitude out of range.</description>
+      </entry>
+      <entry value="8" name="MAV_CMD_ACK_ERR_Z_ALT_OUT_OF_RANGE">
+        <description>Z/Altitude out of range.</description>
+      </entry>
+    </enum>
+    <!-- NOTE: Legacy ACFly component IDs, VTOL type aliases, DO_REPOSITION flag
+         aliases and MISSION_CURRENT flag aliases are deliberately NOT part of
+         the wire dialect. They are provided by the application-level compat
+         layer: GCSPRO/src/comm/AcflyMavlinkCompat.h (and the FC-side equivalent).
+         Keeping standard-name aliases out of the dialect is what allows the
+         dialect to track upstream mavlink without conflicts. -->
+    <enum name="MAV_MISSION_TYPE">
+      <description>ACFly-specific mission type extensions.</description>
+      <entry value="3" name="MAV_MISSION_TYPE_AUTO_ROUTE">
+        <description>Auto route mission type (legacy ACFly extension).</description>
+      </entry>
+    </enum>
+    <enum name="ACCELCAL_VEHICLE_POS">
+      <description>Accelerometer calibration vehicle positions. Originally from ardupilotmega.xml.</description>
+      <entry value="1" name="ACCELCAL_VEHICLE_POS_LEVEL">
+        <description>Level position.</description>
+      </entry>
+      <entry value="2" name="ACCELCAL_VEHICLE_POS_LEFT">
+        <description>Left side down.</description>
+      </entry>
+      <entry value="3" name="ACCELCAL_VEHICLE_POS_RIGHT">
+        <description>Right side down.</description>
+      </entry>
+      <entry value="4" name="ACCELCAL_VEHICLE_POS_NOSEDOWN">
+        <description>Nose down.</description>
+      </entry>
+      <entry value="5" name="ACCELCAL_VEHICLE_POS_NOSEUP">
+        <description>Nose up.</description>
+      </entry>
+      <entry value="6" name="ACCELCAL_VEHICLE_POS_BACK">
+        <description>On its back.</description>
+      </entry>
+      <entry value="16777215" name="ACCELCAL_VEHICLE_POS_SUCCESS">
+        <description>Calibration success.</description>
+      </entry>
+      <entry value="16777216" name="ACCELCAL_VEHICLE_POS_FAILED">
+        <description>Calibration failed.</description>
+      </entry>
+    </enum>
+    <enum name="CAMERA_FEEDBACK_FLAGS">
+      <description>Camera feedback flags. Originally from ardupilotmega.xml.</description>
+      <entry value="0" name="CAMERA_FEEDBACK_PHOTO">
+        <description>Photo was taken.</description>
+      </entry>
+      <entry value="1" name="CAMERA_FEEDBACK_VIDEO">
+        <description>Video frame was captured.</description>
+      </entry>
+      <entry value="2" name="CAMERA_FEEDBACK_BADEXPOSURE">
+        <description>Bad exposure.</description>
+      </entry>
+      <entry value="3" name="CAMERA_FEEDBACK_CLOSEDLOOP">
+        <description>Closed loop feedback.</description>
+      </entry>
+      <entry value="4" name="CAMERA_FEEDBACK_OPENLOOP">
+        <description>Open loop feedback.</description>
+      </entry>
+    </enum>
+    <enum name="CAMERA_STATUS_TYPES">
+      <description>Camera status types. Originally from ardupilotmega.xml.</description>
+      <entry value="0" name="CAMERA_STATUS_TYPE_HEARTBEAT">
+        <description>Camera heartbeat.</description>
+      </entry>
+      <entry value="1" name="CAMERA_STATUS_TYPE_TRIGGER">
+        <description>Camera trigger.</description>
+      </entry>
+      <entry value="2" name="CAMERA_STATUS_TYPE_DISCONNECT">
+        <description>Camera disconnected.</description>
+      </entry>
+      <entry value="3" name="CAMERA_STATUS_TYPE_ERROR">
+        <description>Camera error.</description>
+      </entry>
+      <entry value="4" name="CAMERA_STATUS_TYPE_LOWBATT">
+        <description>Camera low battery.</description>
+      </entry>
+      <entry value="5" name="CAMERA_STATUS_TYPE_LOWSTORE">
+        <description>Camera low storage.</description>
+      </entry>
+      <entry value="6" name="CAMERA_STATUS_TYPE_LOWSTOREV">
+        <description>Camera low storage video.</description>
+      </entry>
+    </enum>
+    <enum name="MAV_REMOTE_LOG_DATA_BLOCK_COMMANDS">
+      <description>Remote log data block commands. Originally from ardupilotmega.xml.</description>
+      <entry value="2147483645" name="MAV_REMOTE_LOG_DATA_BLOCK_STOP">
+        <description>Stop remote log.</description>
+      </entry>
+      <entry value="2147483646" name="MAV_REMOTE_LOG_DATA_BLOCK_START">
+        <description>Start remote log.</description>
+      </entry>
+    </enum>
+    <enum name="MAV_REMOTE_LOG_DATA_BLOCK_STATUSES">
+      <description>Remote log data block statuses. Originally from ardupilotmega.xml.</description>
+      <entry value="0" name="MAV_REMOTE_LOG_DATA_BLOCK_NACK">
+        <description>Remote log block NACK.</description>
+      </entry>
+      <entry value="1" name="MAV_REMOTE_LOG_DATA_BLOCK_ACK">
+        <description>Remote log block ACK.</description>
+      </entry>
+    </enum>
+    <enum name="RALLY_FLAGS" bitmask="true">
+      <description>Rally point flags. Originally from ardupilotmega.xml.</description>
+      <entry value="1" name="FAVORABLE_WIND">
+        <description>Favorable wind flag.</description>
+      </entry>
+      <entry value="2" name="LAND_IMMEDIATELY">
+        <description>Land immediately flag.</description>
+      </entry>
+      <entry value="4" name="ALT_FRAME_VALID">
+        <description>Altitude frame is valid.</description>
+      </entry>
+      <entry value="24" name="ALT_FRAME">
+        <description>Altitude frame.</description>
+      </entry>
+    </enum>
+    <enum name="ACFLY_FUNCTION">
+      <description>ACFly function selectors for MAV_CMD_SET_ACFLY_FUNCTION (248). Each function is switched on or off by the setting in param2.</description>
+      <entry value="100" name="ACFLY_FUNCTION_HEADLESS_MODE">
+        <description>Headless (carefree) mode switch. param2: 1 enable, 0 disable.</description>
+      </entry>
+      <entry value="101" name="ACFLY_FUNCTION_OBSTACLE_AVOIDANCE">
+        <description>Obstacle avoidance switch. param2: 1 enable, 0 disable.</description>
+      </entry>
+      <entry value="102" name="ACFLY_FUNCTION_TERRAIN_FOLLOWING">
+        <description>Terrain following switch. param2: 1 enable, 0 disable.</description>
+      </entry>
+      <entry value="103" name="ACFLY_FUNCTION_SWARMFOLLOW_MODE">
+        <description>Follow mode switch. param2: 1 enable, 0 disable.</description>
+      </entry>
+      <entry value="112" name="ACFLY_FUNCTION_TRAJECTORY_RECORD">
+        <description>Trajectory replay record switch. param2: greater than 0 enables recording with the trajectory index, 0 stops recording.</description>
+      </entry>
+      <entry value="113" name="ACFLY_FUNCTION_TRAJECTORY_REPLAY">
+        <description>Trajectory replay start switch. When selected, param1 greater than 0 is the trajectory index and starts replay, 0 stops replay. param2 selects the replay start mode, param3 selects the replay direction.</description>
+      </entry>
+    </enum>
+    <enum name="ACFLY_AIRPORT_ACTION">
+      <description>Airport (drone dock/nest) control actions for MAV_CMD_AIRPORT (55000). Values 1-9 control the whole airport, values 100-107 control individual airport mechanisms, 998-999 are reset and emergency actions. Value 10 is unassigned.</description>
+      <entry value="1" name="ACFLY_AIRPORT_ACTION_OPEN">
+        <description>Open the airport (unfold the hangar, prepare for takeoff).</description>
+      </entry>
+      <entry value="2" name="ACFLY_AIRPORT_ACTION_CLOSE">
+        <description>Stow the airport (fold the hangar, park the aircraft).</description>
+      </entry>
+      <entry value="3" name="ACFLY_AIRPORT_ACTION_UAV_POWER_ON">
+        <description>Power on the aircraft.</description>
+      </entry>
+      <entry value="4" name="ACFLY_AIRPORT_ACTION_UAV_POWER_OFF">
+        <description>Power off the aircraft.</description>
+      </entry>
+      <entry value="5" name="ACFLY_AIRPORT_ACTION_REPLACE_BATTERY">
+        <description>Replace the aircraft battery (battery swap cycle).</description>
+      </entry>
+      <entry value="6" name="ACFLY_AIRPORT_ACTION_CLOSE_AND_CHARGE">
+        <description>Stow the airport and recharge the aircraft battery.</description>
+      </entry>
+      <entry value="7" name="ACFLY_AIRPORT_ACTION_OPEN_AND_UAV_POWER_ON">
+        <description>Open the airport and power on the aircraft.</description>
+      </entry>
+      <entry value="8" name="ACFLY_AIRPORT_ACTION_CHARGE_START">
+        <description>Start charging the aircraft battery.</description>
+      </entry>
+      <entry value="9" name="ACFLY_AIRPORT_ACTION_CHARGE_STOP">
+        <description>Stop charging the aircraft battery.</description>
+      </entry>
+      <entry value="100" name="ACFLY_AIRPORT_ACTION_COVER_OPEN">
+        <description>Open the airport cover.</description>
+      </entry>
+      <entry value="101" name="ACFLY_AIRPORT_ACTION_COVER_CLOSE">
+        <description>Close the airport cover.</description>
+      </entry>
+      <entry value="102" name="ACFLY_AIRPORT_ACTION_PLATFORM_EXTEND">
+        <description>Extend (send out) the landing platform.</description>
+      </entry>
+      <entry value="103" name="ACFLY_AIRPORT_ACTION_PLATFORM_RETRACT">
+        <description>Retract (stow) the landing platform.</description>
+      </entry>
+      <entry value="104" name="ACFLY_AIRPORT_ACTION_UAV_RELEASE">
+        <description>Release (unclamp) the aircraft.</description>
+      </entry>
+      <entry value="105" name="ACFLY_AIRPORT_ACTION_UAV_CLAMP">
+        <description>Clamp (secure) the aircraft.</description>
+      </entry>
+      <entry value="106" name="ACFLY_AIRPORT_ACTION_POSITIONING_ROD_RELEASE">
+        <description>Release the positioning rod.</description>
+      </entry>
+      <entry value="107" name="ACFLY_AIRPORT_ACTION_POSITIONING_ROD_CENTER">
+        <description>Centre the positioning rod.</description>
+      </entry>
+      <entry value="998" name="ACFLY_AIRPORT_ACTION_ALARM_RESET">
+        <description>Reset (clear) the airport alarm.</description>
+      </entry>
+      <entry value="999" name="ACFLY_AIRPORT_ACTION_EMERGENCY_STOP">
+        <description>Emergency stop: immediately halt all airport motion.</description>
+      </entry>
+    </enum>
+    <enum name="MAV_CMD">
+      <description>ACFly-specific MAVLink commands.</description>
+      <entry value="10" name="MAV_CMD_SEND_WGA">
+        <description>Request vehicle to send WGA code.</description>
+        <param index="1" label="Index"/>
+      </entry>
+      <entry value="11" name="MAV_CMD_WRITE_WGA">
+        <description>Request vehicle to write WGA password.</description>
+        <param index="1" label="Password1"/>
+        <param index="2" label="Password2"/>
+        <param index="3" label="Password3"/>
+        <param index="4" label="Password4"/>
+      </entry>
+      <entry value="12" name="MAV_CMD_SET_RTC">
+        <description>Set real-time clock time.</description>
+        <param index="1" label="RTC Time"/>
+      </entry>
+      <entry value="14" name="MAV_CMD_REQUEST_ACFLY_POSSENSOR_INFO_STREAM">
+        <description>Request position sensor info stream.</description>
+        <param index="1" label="Index"/>
+        <param index="2" label="Rate"/>
+        <param index="3" label="Request"/>
+      </entry>
+      <entry value="15" name="MAV_CMD_REQUEST_HTL">
+        <description>Request HTL simulation data stream.</description>
+        <param index="1" label="Rate Divider"/>
+      </entry>
+      <entry value="1002" name="MAV_CMD_DO_GIMBAL_MANAGER_LASER">
+        <description>Control gimbal laser rangefinder.</description>
+        <param index="1" label="Sysid Primary"/>
+        <param index="2" label="Compid Primary"/>
+        <param index="3" label="Sysid Secondary"/>
+        <param index="4" label="Compid Secondary"/>
+        <param index="7" label="Gimbal device ID"/>
+      </entry>
+      <entry value="1003" name="MAV_CMD_DO_GIMBAL_MANAGER_THERMAL">
+        <description>Control gimbal thermal imaging.</description>
+        <param index="1" label="Sysid Primary"/>
+        <param index="2" label="Compid Primary"/>
+        <param index="3" label="Sysid Secondary"/>
+        <param index="4" label="Compid Secondary"/>
+        <param index="7" label="Gimbal device ID"/>
+      </entry>
+      <entry value="1004" name="MAV_CMD_DO_GIMBAL_MANAGER_CENTER">
+        <description>Command gimbal to center position.</description>
+        <param index="1" label="Sysid Primary"/>
+        <param index="2" label="Compid Primary"/>
+        <param index="3" label="Sysid Secondary"/>
+        <param index="4" label="Compid Secondary"/>
+        <param index="7" label="Gimbal device ID"/>
+      </entry>
+      <entry value="1005" name="MAV_CMD_DO_GIMBAL_MANAGER_UP">
+        <description>Command gimbal to look up.</description>
+        <param index="1" label="Sysid Primary"/>
+        <param index="2" label="Compid Primary"/>
+        <param index="3" label="Sysid Secondary"/>
+        <param index="4" label="Compid Secondary"/>
+        <param index="7" label="Gimbal device ID"/>
+      </entry>
+      <entry value="1006" name="MAV_CMD_DO_GIMBAL_MANAGER_DOWN">
+        <description>Command gimbal to look down.</description>
+        <param index="1" label="Sysid Primary"/>
+        <param index="2" label="Compid Primary"/>
+        <param index="3" label="Sysid Secondary"/>
+        <param index="4" label="Compid Secondary"/>
+        <param index="7" label="Gimbal device ID"/>
+      </entry>
+      <entry value="1007" name="MAV_CMD_DO_GIMBAL_START_TARGET_DETECTION">
+        <description>Start gimbal target detection.</description>
+        <param index="1" label="Sysid Primary"/>
+        <param index="2" label="Compid Primary"/>
+        <param index="3" label="Sysid Secondary"/>
+        <param index="4" label="Compid Secondary"/>
+        <param index="7" label="Gimbal device ID"/>
+      </entry>
+      <entry value="1008" name="MAV_CMD_DO_GIMBAL_STOP_TARGET_DETECTION">
+        <description>Stop gimbal target detection.</description>
+        <param index="1" label="Sysid Primary"/>
+        <param index="2" label="Compid Primary"/>
+        <param index="3" label="Sysid Secondary"/>
+        <param index="4" label="Compid Secondary"/>
+        <param index="7" label="Gimbal device ID"/>
+      </entry>
+      <entry value="1009" name="MAV_CMD_DO_GIMBAL_ENABLE_OSD">
+        <description>Enable gimbal OSD.</description>
+        <param index="1" label="Sysid Primary"/>
+        <param index="2" label="Compid Primary"/>
+        <param index="3" label="Sysid Secondary"/>
+        <param index="4" label="Compid Secondary"/>
+        <param index="7" label="Gimbal device ID"/>
+      </entry>
+      <entry value="1010" name="MAV_CMD_DO_GIMBAL_DISABLE_OSD">
+        <description>Disable gimbal OSD.</description>
+        <param index="1" label="Sysid Primary"/>
+        <param index="2" label="Compid Primary"/>
+        <param index="3" label="Sysid Secondary"/>
+        <param index="4" label="Compid Secondary"/>
+        <param index="7" label="Gimbal device ID"/>
+      </entry>
+      <entry value="1011" name="MAV_CMD_DO_GIMBAL_CALIBRATE">
+        <description>Start gimbal calibration.</description>
+        <param index="1" label="Sysid Primary"/>
+        <param index="2" label="Compid Primary"/>
+        <param index="3" label="Sysid Secondary"/>
+        <param index="4" label="Compid Secondary"/>
+        <param index="7" label="Gimbal device ID"/>
+      </entry>
+      <entry value="1012" name="MAV_CMD_DO_GIMBAL_IR_COLOR">
+        <description>Set gimbal IR color palette.</description>
+        <param index="1" label="Sysid Primary"/>
+        <param index="2" label="Compid Primary"/>
+        <param index="3" label="Sysid Secondary"/>
+        <param index="4" label="Compid Secondary"/>
+        <param index="7" label="Gimbal device ID"/>
+      </entry>
+      <entry value="1013" name="MAV_CMD_DO_GIMBAL_TEMPARATURE">
+        <description>Set gimbal temperature mode (legacy spelling preserved for source compatibility).</description>
+        <param index="1" label="Sysid Primary"/>
+        <param index="2" label="Compid Primary"/>
+        <param index="3" label="Sysid Secondary"/>
+        <param index="4" label="Compid Secondary"/>
+        <param index="7" label="Gimbal device ID"/>
+      </entry>
+      <entry value="83" name="MAV_CMD_NAV_ALTITUDE_WAIT">
+        <description>Mission command to wait for an altitude or downwards vertical speed (legacy, originally ArduPilot).</description>
+        <param index="1" label="Altitude"/>
+        <param index="2" label="Descent Speed"/>
+        <param index="3" label="Wiggle Time"/>
+      </entry>
+      <entry value="230" name="MAV_CMD_DO_SET_VERTICAL_PATH">
+        <description>Set vertical path (legacy, originally ArduPilot).</description>
+      </entry>
+      <entry value="248" name="MAV_CMD_SET_ACFLY_FUNCTION" hasLocation="false" isDestination="false">
+        <description>Enable or disable ACFly functions. The function is selected by param1, and param2 (and param3 for trajectory replay) carry the function specific setting: 100: headless mode switch. 101: obstacle avoidance switch. 102: terrain following switch. 103: follow mode switch. 112: trajectory record switch, param2 greater than 0 enables recording with the trajectory index, 0 stops recording. 113: trajectory replay switch, param1 is the trajectory index, greater than 0 starts replay, 0 stops replay.</description>
+        <param index="1" label="Function" enum="ACFLY_FUNCTION">Function selector: 100 headless mode, 101 obstacle avoidance, 102 terrain following, 103 swarmFollow mode, 112 trajectory replay record, 113 trajectory replay start.</param>
+        <param index="2" label="Setting" minValue="0">Function setting. For functions 100/101/102/103: 1 enable, 0 disable. For function 112: trajectory index to record, 0 stops recording. For function 113: replay start mode (0 replay from recorded start point, 1 replay from current point, 2 slowly converge to the recorded trajectory, 3 replay from current point and heading). Unused for other values.</param>
+        <param index="3" label="Replay Direction" minValue="0" maxValue="2">For function 113 only: 0 forward replay, 1 reverse replay, 2 reverse replay with unchanged yaw. Unused otherwise.</param>
+      </entry>
+      <entry value="249" name="MAV_CMD_START_CIRCLE" hasLocation="true" isDestination="true">
+        <description>Start flying a circle. The circle center is given by param5/param6/param7. Positive param1 flies clockwise, negative counterclockwise. param3 controls the vehicle heading reference during the circle: values in [-360, 360] are relative to the circle frame with origin at the circle center, where 0 points toward the center and 90 points along the circle tangent; values in [-1360, 1360] with a 1000 offset are absolute fixed angles in the North-East-Down frame, where 1000 points north, 1090 points east, -1090 points west, and 1180/-1180 point south.</description>
+        <param index="1" label="Speed" units="m/s">Circle speed. Greater than 0 flies clockwise, less than 0 flies counterclockwise.</param>
+        <param index="2" label="Radius" units="m">Circle radius.</param>
+        <param index="3" label="Heading" units="deg" minValue="-1360" maxValue="1360">Heading during the circle. In [-360, 360]: relative to the circle frame centered on the circle center, 0 points to the center, 90 points along the tangent. In [-1360, 1360] with 1000 offset: fixed absolute angle in the North-East-Down frame, 1000 north, 1090 east, -1090 west, 1180/-1180 south.</param>
+        <param index="4" label="Unused">Unused.</param>
+        <param index="5" label="Latitude" units="degE7">Circle center latitude.</param>
+        <param index="6" label="Longitude" units="degE7">Circle center longitude.</param>
+        <param index="7" label="Altitude Relative" units="m">Circle center altitude relative to home.</param>
+      </entry>
+	  <entry value="250" name="MAV_CMD_SET_REMOTE_CONTROL_AUTHORITY" hasLocation="true" isDestination="true">
+        <description>Used to set up remote control permissions</description>
+		<param index="0" label="Mavlink"/>
+        <param index="1" label="MvlACFly"/>
+        <param index="2" label="Sbus"/>
+        <param index="3" label="Sbus2"/>
+		<param index="4" label="Crsf"/>
+		<param index="5" label="extRC"/>
+      </entry>
+	  <entry value="255" name="MAV_CMD_REQUEST_CRANE_LOG">
+        <description>Used to Request crane log</description>
+      </entry>
+      <entry value="42000" name="MAV_CMD_POWER_OFF_INITIATED">
+        <description>A system wide power-off event has been initiated.</description>
+      </entry>
+      <entry value="42001" name="MAV_CMD_SOLO_BTN_FLY_CLICK">
+        <description>FLY button has been clicked.</description>
+      </entry>
+      <entry value="42002" name="MAV_CMD_SOLO_BTN_FLY_HOLD">
+        <description>FLY button has been held for 1.5 seconds.</description>
+        <param index="1" label="Takeoff Altitude"/>
+      </entry>
+      <entry value="42003" name="MAV_CMD_SOLO_BTN_PAUSE_CLICK">
+        <description>PAUSE button has been clicked.</description>
+        <param index="1" label="Shot Mode"/>
+      </entry>
+      <entry value="42004" name="MAV_CMD_FIXED_MAG_CAL">
+        <description>Magnetometer calibration based on fixed position in earth field.</description>
+        <param index="1" label="Declination"/>
+        <param index="2" label="Inclination"/>
+        <param index="3" label="Intensity"/>
+        <param index="4" label="Yaw"/>
+      </entry>
+      <entry value="42005" name="MAV_CMD_FIXED_MAG_CAL_FIELD">
+        <description>Magnetometer calibration based on fixed expected field values.</description>
+        <param index="1" label="Field X"/>
+        <param index="2" label="Field Y"/>
+        <param index="3" label="Field Z"/>
+      </entry>
+      <entry value="42424" name="MAV_CMD_DO_START_MAG_CAL">
+        <description>Initiate a magnetometer calibration.</description>
+        <param index="1" label="Magnetometers Bitmask"/>
+        <param index="2" label="Retry on Failure"/>
+        <param index="3" label="Autosave"/>
+        <param index="4" label="Delay"/>
+        <param index="5" label="Autoreboot"/>
+      </entry>
+      <entry value="42425" name="MAV_CMD_DO_ACCEPT_MAG_CAL">
+        <description>Accept a magnetometer calibration.</description>
+        <param index="1" label="Magnetometers Bitmask"/>
+      </entry>
+      <entry value="42426" name="MAV_CMD_DO_CANCEL_MAG_CAL">
+        <description>Cancel a running magnetometer calibration.</description>
+        <param index="1" label="Magnetometers Bitmask"/>
+      </entry>
+      <entry value="42427" name="MAV_CMD_SET_FACTORY_TEST_MODE">
+        <description>Command autopilot to get into factory test/diagnostic mode.</description>
+        <param index="1" label="Test Mode"/>
+      </entry>
+      <entry value="42428" name="MAV_CMD_DO_SEND_BANNER">
+        <description>Reply with the version banner.</description>
+      </entry>
+      <entry value="42429" name="MAV_CMD_ACCELCAL_VEHICLE_POS">
+        <description>Used when doing accelerometer calibration.</description>
+        <param index="1" label="Position"/>
+      </entry>
+      <entry value="42501" name="MAV_CMD_GIMBAL_RESET">
+        <description>Causes the gimbal to reset and boot as if it was just powered on.</description>
+      </entry>
+      <entry value="42502" name="MAV_CMD_GIMBAL_AXIS_CALIBRATION_STATUS">
+        <description>Reports progress and success or failure of gimbal axis calibration procedure.</description>
+        <param index="1" label="Axis"/>
+        <param index="2" label="Progress"/>
+        <param index="3" label="Status"/>
+      </entry>
+      <entry value="42503" name="MAV_CMD_GIMBAL_REQUEST_AXIS_CALIBRATION">
+        <description>Starts commutation calibration on the gimbal.</description>
+      </entry>
+      <entry value="42505" name="MAV_CMD_GIMBAL_FULL_RESET">
+        <description>Erases gimbal application and parameters.</description>
+      </entry>
+      <entry value="42650" name="MAV_CMD_FLASH_BOOTLOADER">
+        <description>Update the bootloader.</description>
+        <param index="5" label="Magic Number"/>
+      </entry>
+      <entry value="42651" name="MAV_CMD_BATTERY_RESET">
+        <description>Reset battery capacity for batteries that accumulate consumed battery via integration.</description>
+        <param index="1" label="Battery mask"/>
+        <param index="2" label="Percentage"/>
+      </entry>
+      <entry value="42700" name="MAV_CMD_DEBUG_TRAP">
+        <description>Issue a trap signal to the autopilot process.</description>
+      </entry>
+      <entry value="42701" name="MAV_CMD_SCRIPTING">
+        <description>Control onboard scripting.</description>
+        <param index="1" label="ID"/>
+      </entry>
+      <entry value="55000" name="MAV_CMD_AIRPORT" hasLocation="false" isDestination="false">
+        <description>Control the airport (drone dock/nest): open/stow it, power the aircraft on/off, replace or charge the battery, and drive the individual cover, platform, clamp and positioning rod mechanisms. The command is acknowledged with COMMAND_ACK once the requested action has been accepted.</description>
+        <param index="1" label="Action" enum="ACFLY_AIRPORT_ACTION">1: open, 2: stow, 3: aircraft power on, 4: aircraft power off, 5: replace battery, 6: stow and charge, 7: open and aircraft power on, 8: start charging, 9: stop charging, 100: cover open, 101: cover close, 102: platform extend, 103: platform retract, 104: release aircraft, 105: clamp aircraft, 106: release positioning rod, 107: centre positioning rod, 998: reset alarm, 999: emergency stop.</param>
+        <param index="2" label="Timeout" units="s" minValue="0">Maximum time to wait for the requested action to complete, 0 to use the airport default.</param>
+        <param index="3">Empty</param>
+        <param index="4">Empty</param>
+        <param index="5">Empty</param>
+        <param index="6">Empty</param>
+        <param index="7">Empty</param>
+      </entry>
+    </enum>
+  </enums>
+  <messages>
+    <message id="168" name="WIND">
+      <description>Wind estimation.</description>
+      <field type="float" name="direction" units="deg"/>
+      <field type="float" name="speed" units="m/s"/>
+      <field type="float" name="speed_z" units="m/s"/>
+    </message>
+    <message id="171" name="DATA64">
+      <description>Data packet, size 64.</description>
+      <field type="uint8_t" name="type"/>
+      <field type="uint8_t" name="len" units="bytes"/>
+      <field type="uint8_t[64]" name="data"/>
+    </message>
+    <message id="173" name="RANGEFINDER">
+      <description>Rangefinder reporting.</description>
+      <field type="float" name="distance" units="m"/>
+      <field type="float" name="voltage" units="V"/>
+    </message>
+    <message id="175" name="RALLY_POINT">
+      <description>A rally point. Used to set a point when from GCS -&gt; MAV.</description>
+      <field type="uint8_t" name="target_system"/>
+      <field type="uint8_t" name="target_component"/>
+      <field type="uint8_t" name="idx"/>
+      <field type="uint8_t" name="count"/>
+      <field type="int32_t" name="lat" units="degE7"/>
+      <field type="int32_t" name="lng" units="degE7"/>
+      <field type="int16_t" name="alt" units="m"/>
+      <field type="int16_t" name="break_alt" units="m"/>
+      <field type="uint16_t" name="land_dir" units="cdeg"/>
+      <field type="uint8_t" name="flags" enum="RALLY_FLAGS"/>
+    </message>
+    <message id="176" name="RALLY_FETCH_POINT">
+      <description>Request a current rally point from MAV.</description>
+      <field type="uint8_t" name="target_system"/>
+      <field type="uint8_t" name="target_component"/>
+      <field type="uint8_t" name="idx"/>
+    </message>
+    <message id="177" name="COMPASSMOT_STATUS">
+      <description>Status of compassmot calibration.</description>
+      <field type="uint16_t" name="throttle" units="d%"/>
+      <field type="float" name="current" units="A"/>
+      <field type="uint16_t" name="interference" units="%"/>
+      <field type="float" name="CompensationX"/>
+      <field type="float" name="CompensationY"/>
+      <field type="float" name="CompensationZ"/>
+    </message>
+    <message id="178" name="AHRS2">
+      <description>Status of secondary AHRS filter if available.</description>
+      <field type="float" name="roll" units="rad"/>
+      <field type="float" name="pitch" units="rad"/>
+      <field type="float" name="yaw" units="rad"/>
+      <field type="float" name="altitude" units="m"/>
+      <field type="int32_t" name="lat" units="degE7"/>
+      <field type="int32_t" name="lng" units="degE7"/>
+    </message>
+    <message id="179" name="CAMERA_STATUS">
+      <description>Camera Event.</description>
+      <field type="uint64_t" name="time_usec" units="us"/>
+      <field type="uint8_t" name="target_system"/>
+      <field type="uint8_t" name="cam_idx"/>
+      <field type="uint16_t" name="img_idx"/>
+      <field type="uint8_t" name="event_id" enum="CAMERA_STATUS_TYPES"/>
+      <field type="float" name="p1"/>
+      <field type="float" name="p2"/>
+      <field type="float" name="p3"/>
+      <field type="float" name="p4"/>
+    </message>
+    <message id="180" name="CAMERA_FEEDBACK">
+      <description>Camera Capture Feedback.</description>
+      <field type="uint64_t" name="time_usec" units="us"/>
+      <field type="uint8_t" name="target_system"/>
+      <field type="uint8_t" name="cam_idx"/>
+      <field type="uint16_t" name="img_idx"/>
+      <field type="int32_t" name="lat" units="degE7"/>
+      <field type="int32_t" name="lng" units="degE7"/>
+      <field type="float" name="alt_msl" units="m"/>
+      <field type="float" name="alt_rel" units="m"/>
+      <field type="float" name="roll" units="deg"/>
+      <field type="float" name="pitch" units="deg"/>
+      <field type="float" name="yaw" units="deg"/>
+      <field type="float" name="foc_len" units="mm"/>
+      <field type="uint8_t" name="flags" enum="CAMERA_FEEDBACK_FLAGS"/>
+      <extensions/>
+      <field type="uint16_t" name="completed_captures"/>
+    </message>
+    <message id="181" name="BATTERY2">
+      <description>2nd Battery status.</description>
+      <field type="uint16_t" name="voltage" units="mV"/>
+      <field type="int16_t" name="current_battery" units="cA"/>
+    </message>
+    <message id="182" name="AHRS3">
+      <description>Status of third AHRS filter if available.</description>
+      <field type="float" name="roll" units="rad"/>
+      <field type="float" name="pitch" units="rad"/>
+      <field type="float" name="yaw" units="rad"/>
+      <field type="float" name="altitude" units="m"/>
+      <field type="int32_t" name="lat" units="degE7"/>
+      <field type="int32_t" name="lng" units="degE7"/>
+      <field type="float" name="v1"/>
+      <field type="float" name="v2"/>
+      <field type="float" name="v3"/>
+      <field type="float" name="v4"/>
+    </message>
+    <message id="183" name="AUTOPILOT_VERSION_REQUEST">
+      <description>Request the autopilot version from the system/component.</description>
+      <field type="uint8_t" name="target_system"/>
+      <field type="uint8_t" name="target_component"/>
+    </message>
+    <message id="184" name="REMOTE_LOG_DATA_BLOCK">
+      <description>Send a block of log data to remote location.</description>
+      <field type="uint8_t" name="target_system"/>
+      <field type="uint8_t" name="target_component"/>
+      <field type="uint32_t" name="seqno"/>
+      <field type="uint8_t[200]" name="data"/>
+    </message>
+    <message id="185" name="REMOTE_LOG_BLOCK_STATUS">
+      <description>Send Status of each log block that autopilot board might have sent.</description>
+      <field type="uint8_t" name="target_system"/>
+      <field type="uint8_t" name="target_component"/>
+      <field type="uint32_t" name="seqno"/>
+      <field type="uint8_t" name="status" enum="MAV_REMOTE_LOG_DATA_BLOCK_STATUSES"/>
+    </message>
+    <message id="186" name="LED_CONTROL">
+      <description>Control vehicle LEDs.</description>
+      <field type="uint8_t" name="target_system"/>
+      <field type="uint8_t" name="target_component"/>
+      <field type="uint8_t" name="instance"/>
+      <field type="uint8_t" name="pattern"/>
+      <field type="uint8_t" name="custom_len"/>
+      <field type="uint8_t[24]" name="custom_bytes"/>
+    </message>
+    <message id="191" name="MAG_CAL_PROGRESS">
+      <description>Reports progress of compass calibration.</description>
+      <field type="uint8_t" name="compass_id"/>
+      <field type="uint8_t" name="cal_mask"/>
+      <field type="uint8_t" name="cal_status"/>
+      <field type="uint8_t" name="attempt"/>
+      <field type="uint8_t" name="completion_pct" units="%"/>
+      <field type="uint8_t[10]" name="completion_mask"/>
+      <field type="float" name="direction_x"/>
+      <field type="float" name="direction_y"/>
+      <field type="float" name="direction_z"/>
+    </message>
+    <message id="200" name="SYS_STATUS_ACFLY">
+	  <description>ACFly-specific system status companion to SYS_STATUS.</description>
+	  <field type="uint16_t" name="cpu_usage" units="d%">Maximum usage in percent of the mainloop time. Units: 0.1 % (e.g. 123 means 12.3 %). Values: [0-1000] - should always be below 1000.</field>
+	  <field type="uint32_t" name="remaining_memory">Remaining free OS memory in native CPU words (on a 32-bit MCU one word equals 4 bytes). No standard MAVLink unit for CPU words, so the unit is omitted.</field>
+	  <field type="int16_t[2]" name="daoYaw">Heading measured by direction-finding sensor for each array element, in 0.1 deg (e.g. 1234 means 123.4 deg). -1000 = no direction-finding sensor, 1000 = direction-finding sensor present but unavailable, 0-3600 = direction-finding sensor normal.</field>
+	  <field type="uint16_t[2]" name="adc_voltage">Raw ADC voltage readings in 0.1 V (e.g. 123 means 12.3 V). No standard MAVLink unit for 0.1 V, so the unit is omitted.</field>
+	  <field type="uint16_t[2]" name="adc_current" units="cA">Raw ADC current readings. Units: 0.01 A (e.g. 123 means 1.23 A). 0 = no current sensor on this channel.</field>
+	  <field type="uint16_t" name="sd_card_capacity">Total capacity of the SD card in 10 MB (e.g. 123 means 1230 MB). No standard MAVLink unit for 10 MB, so the unit is omitted. 0 = no SD card inserted or capacity unknown.</field>
+	  <field type="uint16_t" name="sd_card_remain">Remaining free capacity of the SD card in 10 MB (e.g. 123 means 1230 MB). No standard MAVLink unit for 10 MB, so the unit is omitted. 0 = no SD card inserted or free capacity unknown.</field>
+	  <field type="uint32_t" name="sysStatusFlag">.</field>
+	  <field type="uint32_t" name="sysStatusFlag2">.</field>
+	  <field type="uint32_t" name="pos_cflags"/>
+	  <field type="uint32_t" name="pos_aflags"/>
+	  <field type="uint16_t" name="imu_cflags" enum="ACFLY_IMU_FLAGS"/>
+	  <field type="uint16_t" name="imu_aflags" enum="ACFLY_IMU_FLAGS"/>
+	  <extensions/>
+	  <field type="uint16_t" name="mode_code" enum="MODE_CODE">Current flight state code (MODE_CODE). Values map one-to-one to the DJI Cloud API mode_code property. Extension field (MAVLink 2 only).</field>
+	  <field type="uint16_t" name="mode_code_reason" enum="MODE_CODE_REASON">Reason for entering the current flight state (MODE_CODE_REASON). Values below 100 map one-to-one to the DJI Cloud API mode_code_reason property, values 100 and above are ACFly vendor-specific extensions. Extension field (MAVLink 2 only).</field>
+    </message>
+    <message id="201" name="ACFLYHTL_PWMCHANS_FB">
+      <description>ACFly HTL PWM channels feedback.</description>
+      <field type="uint16_t[32]" name="pwms"/>
+    </message>
+    <message id="202" name="ACFLYHTL_IMU_REGISTER">
+      <description>ACFly HTL IMU sensor register.</description>
+      <field type="uint8_t" name="target_system"/>
+      <field type="uint8_t" name="target_component"/>
+      <field type="uint16_t" name="imu_type" enum="ACFLY_IMU_FLAGS"/>
+      <field type="uint16_t" name="freq"/>
+      <field type="char[16]" name="sensor_name"/>
+      <field type="double" name="sensitivity"/>
+    </message>
+    <message id="203" name="ACFLYHTL_IMU_UPDATE">
+      <description>ACFly HTL IMU sensor update.</description>
+      <field type="uint8_t" name="target_system"/>
+      <field type="uint8_t" name="target_component"/>
+      <field type="uint16_t" name="imu_type" enum="ACFLY_IMU_FLAGS"/>
+      <field type="int32_t" name="x"/>
+      <field type="int32_t" name="y"/>
+      <field type="int32_t" name="z"/>
+    </message>
+    <message id="205" name="ACFLY_MISSION_STATUS">
+      <description>ACFly mission navigation status companion to MISSION_CURRENT.</description>
+      <field type="uint16_t" name="seq">Current mission sequence number (pairs with MISSION_CURRENT.seq).</field>
+      <field type="uint16_t" name="resumeSeq"/>
+      <field type="uint16_t" name="flag" enum="ACFLY_MISSION_STATUS_FLAG"/>
+      <field type="float" name="heading" units="deg"/>
+      <field type="float" name="vector_x" units="m"/>
+      <field type="float" name="vector_y" units="m"/>
+      <field type="float" name="vector_z" units="m"/>
+      <field type="float" name="distance" units="m"/>
+      <field type="float" name="trigger_interval" units="m"/>
+      <field type="float" name="speed" units="m/s"/>
+      <field type="float" name="radius" units="m"/>
+    </message>
+    <message id="206" name="ACFlyPosSensor_INFO">
+      <description>ACFly position sensor info.</description>
+      <field type="uint64_t" name="time_usec" units="us"/>
+      <field type="double" name="posE"/>
+      <field type="double" name="posN"/>
+      <field type="double" name="posU"/>
+      <field type="float" name="velE" units="m/s"/>
+      <field type="float" name="velN" units="m/s"/>
+      <field type="float" name="velU" units="m/s"/>
+      <field type="int32_t" name="Lat" units="degE7"/>
+      <field type="int32_t" name="Lon" units="degE7"/>
+      <field type="float" name="delay"/>
+      <field type="float" name="trustXY"/>
+      <field type="float" name="trustZ"/>
+      <field type="char[16]" name="sensor_name"/>
+      <field type="int8_t" name="ind"/>
+      <field type="uint8_t" name="type" enum="ACFLY_POSTYPE_FLAGS"/>
+      <field type="uint8_t" name="DataFrame"/>
+      <field type="uint8_t" name="DataType" enum="ACFLY_POSDATATYPE_FLAGS"/>
+      <extensions/>
+      <field type="uint8_t[4]" name="additionInfo1"/>
+      <field type="float[8]" name="additionInfo2"/>
+    </message>
+    <message id="207" name="FOLLOW_TARGET_ACFLY">
+      <description>Current motion information from a designated system, with target yaw. ACFly extension of FOLLOW_TARGET.</description>
+      <field type="uint64_t" name="timestamp" units="ms">Timestamp (time since system boot).</field>
+      <field type="uint8_t" name="est_capabilities">bit positions for tracker reporting capabilities (POS = 0, VEL = 1, ACCEL = 2, ATT + RATES = 3)</field>
+      <field type="int32_t" name="lat" units="degE7">Latitude (WGS84)</field>
+      <field type="int32_t" name="lon" units="degE7">Longitude (WGS84)</field>
+      <field type="float" name="alt" units="m">Altitude (MSL)</field>
+      <field type="float[3]" name="vel" units="m/s" invalid="[0]">target velocity (0,0,0) for unknown</field>
+      <field type="float[3]" name="acc" units="m/s/s" invalid="[0]">linear target acceleration (0,0,0) for unknown</field>
+      <field type="float[4]" name="attitude_q" invalid="[0]">(0 0 0 0 for unknown)</field>
+      <field type="float[3]" name="rates" invalid="[0]">(0 0 0 for unknown)</field>
+      <field type="float[3]" name="position_cov">eph epv</field>
+      <field type="uint64_t" name="custom_state">button states or switches of a tracker device</field>
+      <field type="float" name="yaw" units="cdeg">Target yaw (centidegrees).</field>
+    </message>
+    <message id="208" name="ACFLY_REGEISTERPOSSENSOR">
+      <description>ACFly position sensor register.</description>
+      <field type="float" name="delay"/>
+      <field type="float" name="trustXY"/>
+      <field type="float" name="trustZ"/>
+      <field type="float" name="LTTrustXY"/>
+      <field type="float" name="LTTrustZ"/>
+      <field type="uint8_t" name="target_system"/>
+      <field type="uint8_t" name="target_component"/>
+      <field type="char[16]" name="sensor_name"/>
+      <field type="uint8_t" name="ind"/>
+      <field type="uint8_t" name="type" enum="ACFLY_POSTYPE_FLAGS"/>
+      <field type="uint8_t" name="DataFrame"/>
+      <field type="uint8_t" name="DataType" enum="ACFLY_POSDATATYPE_FLAGS"/>
+    </message>
+    <message id="209" name="ACFLY_UPDATEPOSSENSOR">
+      <description>ACFly position sensor update.</description>
+      <field type="double" name="posX"/>
+      <field type="double" name="posY"/>
+      <field type="double" name="posZ"/>
+      <field type="float" name="velX" units="m/s"/>
+      <field type="float" name="velY" units="m/s"/>
+      <field type="float" name="velZ" units="m/s"/>
+      <field type="float" name="delay"/>
+      <field type="float" name="trustXY"/>
+      <field type="float" name="trustZ"/>
+      <field type="float" name="LTTrustXY"/>
+      <field type="float" name="LTTrustZ"/>
+      <field type="uint8_t" name="target_system"/>
+      <field type="uint8_t" name="target_component"/>
+      <field type="uint8_t" name="ind"/>
+      <field type="int8_t" name="DataType" enum="ACFLY_POSDATATYPE_FLAGS"/>
+      <field type="uint8_t" name="reset"/>
+      <extensions/>
+      <field type="float[4]" name="AttQuat"/>
+    </message>
+    <message id="210" name="MISSION_REPORT">
+      <description>Mission execution status report for each mission item.</description>
+      <field type="uint64_t" name="time_usec" units="us">Timestamp (UNIX Epoch time or time since system boot).</field>
+      <field type="uint16_t" name="seq">Mission sequence number.</field>
+      <field type="uint16_t" name="cmd" enum="MAV_CMD">Mission command identifier.</field>
+      <field type="uint16_t" name="mission_count">Total number of mission items in the mission.</field>
+      <field type="uint8_t" name="progress">Current mission item progress, 0 to 100.</field>
+      <field type="uint8_t" name="result" enum="ACFLY_MISSION_REPORT_RESULT">Mission execution state.</field>
+    </message>
+    <message id="211" name="THREAD_INFO">
+      <description>ACFly autopilot thread status and resource usage. One message reports a single thread; the autopilot iterates the thread index so the GCS can poll every thread by counting 0..num_threads-1.</description>
+      <field type="uint32_t" name="time_boot_ms" units="ms">Timestamp (time since system boot).</field>
+      <field type="uint16_t" name="remaining_stack">Remaining free stack space for the thread in native CPU words (on a 32-bit MCU one word equals 4 bytes). No standard MAVLink unit for CPU words, so the unit is omitted.</field>
+      <field type="uint16_t" name="stack_size">Total stack size allocated for the thread in native CPU words. No standard MAVLink unit for CPU words, so the unit is omitted. Stack usage ratio = (stack_size - remaining_stack) / stack_size (unit cancels out).</field>
+      <field type="uint16_t" name="cpu_usage" units="c%">Thread CPU usage over the recent measurement window in centi-percent (0-10000). 10000 = 100.00%, so two decimal places are preserved without a float field.</field>
+      <field type="uint8_t" name="index">Thread index (0-based, pairs with num_threads to iterate all threads).</field>
+      <field type="uint8_t" name="num_threads">Total number of threads reported by the autopilot.</field>
+      <field type="uint8_t" name="priority">Thread priority (RTOS native value; higher usually means higher priority).</field>
+      <field type="uint8_t" name="state" enum="THREAD_STATE">Thread scheduling state (mirrors FreeRTOS eTaskState).</field>
+      <field type="char[24]" name="name">Null-terminated thread name.</field>
+    </message>
+    <message id="352" name="WATER_QUALITY_SENSOR">
+      <description>Water quality monitoring data from sensors.</description>
+      <field type="float" name="temperature"/>
+      <field type="float" name="pH"/>
+      <field type="float" name="dissolved_oxygen"/>
+      <field type="float" name="turbidity"/>
+      <field type="float" name="conductivity"/>
+      <field type="uint8_t" name="type" enum="ACFLY_WATER_QUALITY_SENSOR_TYPE"/>
+    </message>
+    <message id="500" name="COMPONENT_EXTENSION43">
+      <description>Message for specify component.</description>
+      <field type="uint8_t" name="target_network"/>
+      <field type="uint8_t" name="target_system"/>
+      <field type="uint8_t" name="target_component"/>
+      <field type="uint16_t" name="message_type"/>
+      <field type="uint8_t[43]" name="payload"/>
+    </message>
+    <message id="602" name="BATTERY_STATUS_ACFLY">
+      <description>ACFly battery status companion.</description>
+      <field type="uint8_t" name="id"/>
+      <field type="uint8_t" name="health" units="%"/>
+      <field type="uint8_t" name="remaining_percentage" units="%"/>
+      <field type="uint8_t" name="cell_count"/>
+      <field type="uint16_t" name="fault_bitmask"/>
+      <field type="int16_t" name="temperature" units="deg"/>
+      <field type="uint16_t" name="cycle_count"/>
+      <field type="int16_t" name="current">Battery current in 100 mA (e.g. 123 means 12.3 A). No standard MAVLink unit for 100 mA, so the unit is omitted.</field>
+      <field type="uint32_t" name="voltage">Battery voltage in 100 mV (e.g. 123 means 12.3 V). No standard MAVLink unit for 100 mV, so the unit is omitted.</field>
+      <field type="uint32_t" name="capacity" units="mAh"/>
+      <field type="uint32_t" name="sequence_num"/>
+      <field type="uint8_t[48]" name="voltages">Per-cell voltages in 100 mV (e.g. 123 means 12.3 V). No standard MAVLink unit for 100 mV, so the unit is omitted.</field>
+      <extensions/>
+      <field type="char[30]" name="serial_number">Battery serial number (null-terminated string if shorter than 30 bytes).</field>
+    </message>
+    <!-- ACFly legacy compatibility messages (GCS side peripherals/features).
+         Names and field layouts are frozen to preserve CRC_EXTRA compatibility.
+         CRC is case sensitive: do not rename messages or fields. -->
+    <message id="227" name="HYDROGEN_BATTERY_INFO">
+      <description>ACFly hydrogen battery info (legacy). Do not rename.</description>
+      <field type="float" name="humidity">Humidity of environment.</field>
+      <field type="float" name="temperature">Temperature of environment.</field>
+      <field type="float" name="fan_speed">Fan speed.</field>
+      <field type="float" name="hb_tank_pressure">Hydrogen tank pressure.</field>
+      <field type="float" name="hb_gas_pressure">Hydrogen gas pressure.</field>
+      <field type="float" name="hb_voltage">Hydrogen battery voltage.</field>
+      <field type="float" name="hb_current">Hydrogen battery current.</field>
+      <field type="float" name="hb_Temperature">Hydrogen battery temperature.</field>
+      <field type="float" name="hb_power">Hydrogen battery power.</field>
+      <field type="float" name="lP_voltage">LIPO battery voltage.</field>
+      <field type="float" name="lP_current">LIPO battery current.</field>
+      <field type="float" name="lP_Temperature">LIPO battery temperature.</field>
+      <field type="float" name="lP_power">LIPO battery power.</field>
+      <field type="float" name="toatal_power">Total power (legacy spelling preserved).</field>
+    </message>
+    <message id="272" name="CAMERA_GIMBAL_STATUS">
+      <description>ACFly camera/gimbal status (legacy, originally ArduPilot). Do not rename.</description>
+      <field type="uint32_t" name="time_boot_ms" units="ms">Timestamp (time since system boot).</field>
+      <field type="float" name="gimBal_pitch" units="deg">Pitch of gimbal (&gt;360 if unknown).</field>
+      <field type="float" name="gimBal_yaw" units="deg">Yaw of gimbal (&gt;360 if unknown).</field>
+      <field type="float" name="hfov_now" units="deg">Current horizontal field of view (&gt;360 if unknown).</field>
+      <field type="float" name="hfov_min" units="deg">Minimal horizontal field of view (&gt;360 if unknown).</field>
+      <field type="float" name="hfov_max" units="deg">Maximum horizontal field of view (&gt;360 if unknown).</field>
+      <field type="float" name="vfov_now" units="deg">Current vertical field of view (&gt;360 if unknown).</field>
+      <field type="float" name="vfov_min" units="deg">Minimal vertical field of view (&gt;360 if unknown).</field>
+      <field type="float" name="vfov_max" units="deg">Maximum vertical field of view (&gt;360 if unknown).</field>
+      <field type="float" name="distance_detected" units="m">Radar distance (-1 if unknown).</field>
+      <field type="int32_t" name="target_lat" units="degE7">Latitude (WGS84, EGM96 ellipsoid).</field>
+      <field type="int32_t" name="target_lon" units="degE7">Longitude (WGS84, EGM96 ellipsoid).</field>
+      <field type="int32_t" name="target_alt" units="m">Altitude (MSL).</field>
+      <field type="int16_t" name="target_xMin">Target screen coordinate left to right: 0-1.</field>
+      <field type="int16_t" name="target_xMax">Target screen coordinate left to right: 0-1.</field>
+      <field type="int16_t" name="target_yMin">Target screen coordinate up to down: 0-1.</field>
+      <field type="int16_t" name="target_yMax">Target screen coordinate up to down: 0-1.</field>
+      <field type="int8_t" name="currentZoomLevel">Zoom level of camera (-1 if unknown).</field>
+      <field type="int8_t" name="zoomLevel_min">Min zoom level of camera (-1 if unknown).</field>
+      <field type="int8_t" name="zoomLevel_max">Max zoom level of camera (-1 if unknown).</field>
+      <field type="int8_t" name="yaw_mode">0: follow, 1: lock, 2: look down (-1 if unknown).</field>
+      <field type="int8_t" name="track_mode">0: not active, 1: active (-1 if unknown).</field>
+      <field type="uint8_t" name="flag">0: dynamic fov value not available; 1: available.</field>
+    </message>
+    <message id="312" name="UAVCAN_RAW">
+      <description>ACFly raw CAN frame transport (legacy CAN tool). Do not rename.</description>
+      <field type="uint8_t" name="target_system">System ID.</field>
+      <field type="uint8_t" name="target_component">Component ID.</field>
+      <field type="uint8_t" name="sequence">Message sequence, auto +1 for every CAN raw frame.</field>
+      <field type="uint8_t" name="can_port">CAN port id, e.g. 0, 1, 2 (0xFF send to all ports).</field>
+      <field type="uint8_t" name="payloadLen">Payload length.</field>
+      <field type="uint32_t" name="can_id">CAN id, bit0-bit28, bit29: [0:standard frame, 1:extended frame], bit30: [1:require feedback].</field>
+      <field type="uint8_t[64]" name="payload">CAN payload.</field>
+    </message>
+    <message id="414" name="AUTO_ROUTE_REQUEST">
+      <description>ACFly auto route request (legacy). Do not rename.</description>
+      <field type="int32_t" name="lat1" units="degE7">Latitude (WGS84).</field>
+      <field type="int32_t" name="lon1" units="degE7">Longitude (WGS84).</field>
+      <field type="int32_t" name="alt1" units="m">Altitude (MSL).</field>
+      <field type="int32_t" name="lat2" units="degE7">Latitude (WGS84).</field>
+      <field type="int32_t" name="lon2" units="degE7">Longitude (WGS84).</field>
+      <field type="int32_t" name="alt2" units="m">Altitude (MSL).</field>
+      <field type="uint8_t" name="target_system">System ID.</field>
+      <field type="uint8_t" name="target_component">Component ID.</field>
+      <field type="uint8_t" name="type">0: takeoff, 1: return to launch.</field>
+      <field type="uint8_t" name="mode">0: efficiency mode, 1: simple mode.</field>
+    </message>
+    <message id="415" name="AUTO_ROUTE_REQUEST_ACK">
+      <description>ACFly auto route request acknowledgement (legacy). Do not rename.</description>
+      <field type="uint8_t" name="target_system">System ID.</field>
+      <field type="uint8_t" name="target_component">Component ID.</field>
+      <field type="uint8_t" name="type">0: takeoff, 1: return to launch.</field>
+      <field type="uint8_t" name="mode">0: efficiency mode, 1: simple mode.</field>
+      <field type="uint8_t" name="progress" units="%">0-100.</field>
+    </message>
+    <message id="601" name="FORMATION_COMMAND_INT">
+      <description>ACFly formation (swarm) command (legacy). Do not rename.</description>
+      <field type="uint64_t" name="time_usec" units="us">Timestamp (UNIX Epoch time since 1.1.1970).</field>
+      <field type="uint64_t" name="cmdExTime" units="ms">Timestamp that the command should be executed (UNIX Epoch time since 1.1.1970).</field>
+      <field type="uint16_t" name="target_system">System ID.</field>
+      <field type="uint16_t" name="target_component">Component ID.</field>
+      <field type="uint8_t" name="frame">The coordinate system of the COMMAND.</field>
+      <field type="uint8_t" name="flag">Flag.</field>
+      <field type="uint16_t" name="command">The scheduled action for the mission item.</field>
+      <field type="float[7]" name="params">PARAM1-7.</field>
+      <field type="int32_t" name="x">local: x position in meters * 1e4; global: latitude in degrees * 1e7.</field>
+      <field type="int32_t" name="y">local: y position in meters * 1e4; global: longitude in degrees * 1e7.</field>
+      <field type="float" name="z">z position: global: altitude in meters (relative or absolute, depending on frame).</field>
+    </message>
+    <message id="21168" name="GET_RC_CHANNEL_VALUE_REQ">
+      <description>ACFly request current RC channel values (legacy). Do not rename.</description>
+      <field type="uint8_t" name="req">1 - request.</field>
+    </message>
+    <message id="21169" name="GET_RC_CHANNEL_VALUE_RESPOND">
+      <description>ACFly RC channel values response (legacy). Do not rename.</description>
+      <field type="uint16_t[16]" name="channel">RC channels 1-16.</field>
+      <field type="uint16_t[16]" name="channelExt">Extended RC channels 17-32.</field>
+    </message>
+  </messages>
+</mavlink>
